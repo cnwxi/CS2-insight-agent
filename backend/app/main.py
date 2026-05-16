@@ -718,6 +718,7 @@ class ConfigPayload(BaseModel):
     recording_global_pacing: Optional[dict[str, Any]] = None
     default_record_warmup: Optional[dict[str, Any]] = None
     cs2_extra_launch_args: Optional[str] = None
+    cs2_extra_launch_args_user_configured: Optional[bool] = None
     record_inject_console_lines: Optional[str] = None
     experimental: Optional[ExperimentalPayload] = None
     spec_player_verify: Optional[SpecPlayerVerifyPatch] = None
@@ -904,7 +905,15 @@ async def update_config(payload: ConfigPayload):
             else {}
         )
     if payload.cs2_extra_launch_args is not None:
-        cfg.cs2_extra_launch_args = str(payload.cs2_extra_launch_args)
+        next_launch_args = str(payload.cs2_extra_launch_args)
+        if payload.cs2_extra_launch_args_user_configured is not None:
+            cfg.cs2_extra_launch_args = next_launch_args
+            cfg.cs2_extra_launch_args_user_configured = bool(payload.cs2_extra_launch_args_user_configured)
+        elif next_launch_args != cfg.cs2_extra_launch_args:
+            cfg.cs2_extra_launch_args = next_launch_args
+            cfg.cs2_extra_launch_args_user_configured = True
+    elif payload.cs2_extra_launch_args_user_configured is not None:
+        cfg.cs2_extra_launch_args_user_configured = bool(payload.cs2_extra_launch_args_user_configured)
     if payload.record_inject_console_lines is not None:
         cfg.record_inject_console_lines = str(payload.record_inject_console_lines)
     if payload.experimental is not None:

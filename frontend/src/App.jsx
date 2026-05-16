@@ -30,6 +30,14 @@ import { formatRecordingApiError } from "./utils/formatRecordingApiError";
 import { Loader2 } from "lucide-react";
 
 const API = axios.create({ baseURL: "/api" });
+const DEFAULT_CS2_EXTRA_LAUNCH_ARGS = "-fullscreen";
+
+function ensureDefaultCs2FullscreenArg(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return DEFAULT_CS2_EXTRA_LAUNCH_ARGS;
+  if (/(?:^|\s)-fullscreen(?=$|\s)/i.test(text)) return text;
+  return `${text}\n${DEFAULT_CS2_EXTRA_LAUNCH_ARGS}`;
+}
 
 const DEFAULT_SPEC_PLAYER_VERIFY = Object.freeze({
   demo_timescale: 0.05,
@@ -50,6 +58,7 @@ export default function App() {
   const obsConfigRef = useRef(obsConfig);
   obsConfigRef.current = obsConfig;
   const obsConfigHydratedRef = useRef(false);
+  const [configHydrated, setConfigHydrated] = useState(false);
   /** GET /api/config 已注入录制队列全局节奏后再允许自动写回，避免覆盖用户在本页会话内的修改 */
   const pacingPersistReadyRef = useRef(false);
   const [llmConfig, setLlmConfig] = useState({
@@ -815,6 +824,7 @@ export default function App() {
         }
         if (!cancelled) {
           obsConfigHydratedRef.current = true;
+          setConfigHydrated(true);
           queueMicrotask(() => {
             pacingPersistReadyRef.current = true;
           });
@@ -1884,6 +1894,20 @@ export default function App() {
         put.expected_parse_players = raw.expected_parse_players;
         setExpectedParsePlayersText(raw.expected_parse_players.join("\n"));
       }
+      if (typeof raw.cs2_extra_launch_args === "string") {
+        const launchArgsUserConfigured =
+          typeof raw.cs2_extra_launch_args_user_configured === "boolean"
+            ? raw.cs2_extra_launch_args_user_configured
+            : false;
+        const launchArgs = launchArgsUserConfigured
+          ? raw.cs2_extra_launch_args
+          : ensureDefaultCs2FullscreenArg(raw.cs2_extra_launch_args);
+        put.cs2_extra_launch_args = launchArgs;
+        put.cs2_extra_launch_args_user_configured = launchArgsUserConfigured;
+        setCs2ExtraLaunchArgs(launchArgs);
+      } else if (typeof raw.cs2_extra_launch_args_user_configured === "boolean") {
+        put.cs2_extra_launch_args_user_configured = raw.cs2_extra_launch_args_user_configured;
+      }
       if (Object.keys(put).length) {
         await API.put("config", put);
       }
@@ -2062,7 +2086,7 @@ export default function App() {
     setCs2ExtraLaunchArgs,
     recordInjectConsoleLines,
     setRecordInjectConsoleLines,
-    persistCs2RecordExtras,
+    persistCs2RecordExtras: configHydrated ? persistCs2RecordExtras : null,
     experimentalPovEnabled,
     persistExperimentalPov,
     hasDemos,
@@ -2224,7 +2248,7 @@ export default function App() {
           onCs2ExtraLaunchArgsChange={setCs2ExtraLaunchArgs}
           recordInjectConsoleLines={recordInjectConsoleLines}
           onRecordInjectConsoleLinesChange={setRecordInjectConsoleLines}
-          onPersistCs2RecordExtras={persistCs2RecordExtras}
+          onPersistCs2RecordExtras={configHydrated ? persistCs2RecordExtras : null}
         />
 
         <LibraryLoadModeModal
