@@ -2547,7 +2547,9 @@ def reveal_file_in_explorer(body: RevealFileInExplorerBody):
             if p.is_dir():
                 os.startfile(str(p))  # noqa: S606
             else:
-                sp.Popen(["explorer", "/select," + str(p)])
+                # `/select, <path>` 分成两个参数更稳；把路径拼进同一个参数时，
+                # Explorer 在含空格/特殊字符场景下可能退回默认“文档”目录。
+                sp.Popen(["explorer.exe", "/select,", str(p)])
         elif sys.platform == "darwin":
             sp.run(["open", "-R", str(p)], check=False, timeout=20)
         else:

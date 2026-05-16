@@ -16,7 +16,7 @@
 | Layer    | Technology                                      |
 | -------- | ----------------------------------------------- |
 | Frontend | React 19 + TailwindCSS 4 + Vite 6 + Zustand     |
-| Backend  | Python 3.10 + FastAPI                           |
+| Backend  | Python 3.12 + FastAPI                           |
 | 解析引擎     | demoparser2 + pandas                            |
 | AI 网关    | OpenAI 兼容 SDK（DeepSeek / Qwen / GLM / OpenAI 等） |
 | OBS 控制   | obs-websocket-py                                |
@@ -76,6 +76,8 @@ cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
+
+实际发放版本内置的 Python 运行时为 `3.12`。
 
 ### 2. Frontend
 
